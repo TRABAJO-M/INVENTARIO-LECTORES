@@ -18,11 +18,11 @@
 
     h2 {
       margin: 10px 0;
-      font-size: 2.2em;
+      font-size: 3.5em;
     }
 
     #estadoActual {
-      font-size: 1.3em;
+      font-size: 3.5em;
       color: green;
       margin-bottom: 10px;
     }
@@ -36,12 +36,20 @@
 
     #mensaje {
       margin-top: 10px;
-      font-size: 1.3em;
+      font-size: 3.5em;
       color: #333;
     }
 
+    #seleccionDatos {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+    }
+   
+
     select, button {
-      font-size: 1.1em;
+      font-size: 3.5em;
       margin: 10px;
     }
   </style>
@@ -70,8 +78,8 @@
   const html5QrCode = new Html5Qrcode("reader");
   const config = { fps: 10, qrbox: { width: 400, height: 300 } };
 
-  const usuariosValidos = ["Pedro", "Maria", "Juana"];
-  const sectoresValidos = ["Sector1", "Sector2", "Sector3"];
+  const usuariosValidos = ["Cristobal", "Ruben", "Sebastian", "Jhoan", "Matias","Claudio", "Renato"];
+  const sectoresValidos = ["Rack 1", "Rack 2", "Rack 3", "Rack 4", "Rack 5", "Rack 6", "Rack 7", "Rack 8", "Rack 9", "Rack 10", "Rack 11", "Rack 12", "Rack 13"];
 
   function poblarOpciones() {
     const usuarioSelect = document.getElementById("usuario");
@@ -146,7 +154,7 @@
       return;
     }
 
-    document.getElementById("mensaje").innerText = "Escaneado: " + decodedText;
+    document.getElementById("mensaje").innerText = `Ultimo codigo escaneado por ${usuario} en ${sector} → Código: ${decodedText}`;
     document.getElementById("sonidoBeep").play();
 
     fetch("guardar_codigo.php", {
