@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Escáner de Código de Barras</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<style>
+  /* Estilos generales del HTML y cuerpo */
+  html, body {
+    margin: 0;                         /* Elimina márgenes por defecto del navegador */
+    padding: 0;                        /* Elimina el relleno por defecto */
+    height: 100%;                      /* Ocupa el alto total de la pantalla */
+    font-family: Arial, sans-serif;   /* Fuente usada en toda la página */
+    background-color: #fff;           /* Fondo blanco */
+    display: flex;                    /* Flexbox para alinear elementos verticalmente */
+    flex-direction: column;          /* Alinea los hijos de arriba hacia abajo */
+    align-items: center;             /* Centra horizontalmente los elementos */
+  }
+
+  /* Título de la página */
+  h2 {
+    margin: 10px 0;                   /* Margen arriba y abajo del título */
+    font-size: 4em;                 /* Tamaño del texto */
+  }
+
+ /* TAMAÑO DE PANTALLA DE LA CAMARA VISIBLE, VERSION INICIAL DEL Visor del escáner de código de barras  */
+ /*  #reader {
+ /*     width: 95vw;                      /* 95% del ancho de la pantalla del celular */
+ /*     max-width: 600px;                 /* Nunca más de 600px de ancho */
+ /*     height: 95vw;                     /* Altura igual al ancho (cuadrado) */
+ /*     max-height: 600px;                /* Nunca más de 600px de alto */
+ /*     border: 2px solid #ccc;          /* Borde gris claro alrededor del lector */
+ /*     margin: 0 auto;                   /* Centra horizontalmente */
+ /*  } */
+ 
+/* TAMAÑO DE PANTALLA DE LA CAMARA VISIBLE, VERSION INICIAL DEL Visor del escáner de código de barras  */
+#reader {
+  width: 100vw;
+  max-width: 800px;
+  height: auto;
+  margin: 0 auto;
+}
+
+  /* Mensaje que muestra el código leído */
+  #mensaje {
+    margin-top: 10px;                /* Separación del visor hacia abajo */
+    font-size: 5em;                  /* Tamaño del texto */
+    color: #333;                     /* Color gris oscuro */
+  }
+</style>
+</head>
+<body>
+  <h2>Escanear código de barras</h2>
+  <div id="reader"></div>
+  <p id="mensaje"></p>
+
+ <script>
+  function onScanSuccess(decodedText, decodedResult) {
+    document.getElementById("mensaje").innerText = "Código leído anterior: " + decodedText;
+
+    fetch("guardar_codigo.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "codigo=" + encodeURIComponent(decodedText)
+    }).then(res => {
+      if (res.ok) {
+        console.log("Código guardado con éxito");
+      } else {
+        console.error("Error al guardar");
+      }
+    });
+
+    // Pausar escaneo por 1,5 segundos para evitar repeticiones
+    html5QrCode.stop().then(() => {
+      setTimeout(() => {
+        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
+      }, 1500);
+    });
+  }
+
+  const html5QrCode = new Html5Qrcode("reader");
+
+  // ⚠️ Aquí usamos un valor fijo para asegurar visibilidad del cuadro blanco
+  const config = {
+    fps: 10,
+    qrbox: { width: 400, height: 300 }  // Tamaño claro y visible del cuadro de escaneo
+  };
+
+  html5QrCode.start(
+    { facingMode: "environment" },  // Usa la cámara trasera del celular
+    config,
+    onScanSuccess
+  );
+</script>
+
+</body>
+</html>
