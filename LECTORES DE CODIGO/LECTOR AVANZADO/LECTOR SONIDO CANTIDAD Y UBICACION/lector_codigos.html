@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Escáner por sector</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h2 {
+      margin: 10px 0;
+      font-size: 2.2em;
+    }
+
+    #sectorActivo {
+      font-size: 1.3em;
+      color: green;
+      margin-bottom: 10px;
+    }
+
+    #reader {
+      width: 100vw;
+      max-width: 800px;
+      height: auto;
+      margin: 0 auto;
+    }
+
+    #mensaje {
+      margin-top: 10px;
+      font-size: 1.3em;
+      color: #333;
+    }
+
+    #cantidad {
+      font-size: 1.8em;
+      margin: 20px 0;
+      padding: 10px;
+      width: 200px;
+      text-align: center;
+    }
+
+    #enviarBtn {
+      font-size: 1.5em;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+
+    select, button {
+      font-size: 1.1em;
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+<audio id="sonidoBeep" src="beep-472.mp3" preload="auto"></audio>
+
+<div id="seleccionSector" style="text-align:center; margin-top:20px;">
+  <h2>Selecciona el sector</h2>
+  <label for="sector">Sector:</label>
+  <select id="sector"></select>
+  <button onclick="guardarSector()">Confirmar</button>
+</div>
+
+<h2>Escanear código de barras</h2>
+<p id="sectorActivo" style="display: none;"></p>
+<button id="cambiarSectorBtn" style="display:none;">Cambiar sector</button>
+<div id="reader"></div>
+<p id="mensaje">Esperando escaneo...</p>
+<input type="number" id="cantidad" placeholder="Cantidad" />
+<button id="enviarBtn">Enviar</button>
+
+<script>
+  let ultimoCodigo = "";
+  const html5QrCode = new Html5Qrcode("reader");
+  const config = { fps: 10, qrbox: { width: 400, height: 300 } };
+
+  const sectoresValidos = ["Sector1", "Sector2", "Sector3"]; // ← Puedes editar aquí tus sectores
+
+  function poblarSectores() {
+    const sectorSelect = document.getElementById("sector");
+    sectoresValidos.forEach(sector => {
+      const opt = document.createElement("option");
+      opt.value = sector;
+      opt.textContent = sector;
+      sectorSelect.appendChild(opt);
+    });
+  }
+
+  function guardarSector() {
+    const sector = document.getElementById("sector").value;
+    if (!sector) {
+      alert("Debes seleccionar un sector.");
+      return;
+    }
+
+    localStorage.setItem("sector", sector);
+
+    document.getElementById("seleccionSector").style.display = "none";
+    mostrarElementos();
+    html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
+  }
+
+  function mostrarElementos() {
+    const sector = localStorage.getItem("sector");
+    document.getElementById("sectorActivo").innerText = "Escaneando en: " + sector;
+    document.getElementById("sectorActivo").style.display = "block";
+
+    document.getElementById("reader").style.display = "block";
+    document.getElementById("cantidad").style.display = "block";
+    document.getElementById("enviarBtn").style.display = "inline-block";
+    document.getElementById("cambiarSectorBtn").style.display = "inline-block";
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    poblarSectores();
+
+    document.getElementById("reader").style.display = "none";
+    document.getElementById("cantidad").style.display = "none";
+    document.getElementById("enviarBtn").style.display = "none";
+    document.getElementById("cambiarSectorBtn").style.display = "none";
+    document.getElementById("sectorActivo").style.display = "none";
+
+    if (localStorage.getItem("sector")) {
+      document.getElementById("seleccionSector").style.display = "none";
+      mostrarElementos();
+      html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
+    }
+  });
+
+  function onScanSuccess(decodedText) {
+    ultimoCodigo = decodedText;
+    document.getElementById("mensaje").innerText = "Código recién escaneado: " + decodedText;
+    document.getElementById("sonidoBeep").play();
+
+    html5QrCode.stop().then(() => {
+      setTimeout(() => {
+        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
+      }, 1500);
+    });
+  }
+
+  document.getElementById("enviarBtn").addEventListener("click", function () {
+    const cantidad = document.getElementById("cantidad").value;
+    const sector = localStorage.getItem("sector");
+
+    if (!sector || !sectoresValidos.includes(sector)) {
+      alert("Sector no válido.");
+      return;
+    }
+
+    if (ultimoCodigo === "") {
+      alert("Primero debes escanear un código.");
+      return;
+    }
+
+    if (cantidad === "" || isNaN(cantidad) || cantidad <= 0) {
+      alert("Por favor, ingresa una cantidad válida.");
+      return;
+    }
+
+    fetch("guardar_codigo.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body:
+        "codigo=" + encodeURIComponent(ultimoCodigo) +
+        "&cantidad=" + encodeURIComponent(cantidad) +
+        "&sector=" + encodeURIComponent(sector)
+    }).then(res => {
+      if (res.ok) {
+        document.getElementById("mensaje").innerText =
+          "Guardado en " + sector + ": " + ultimoCodigo + " x" + cantidad;
+        document.getElementById("cantidad").value = "";
+        ultimoCodigo = "";
+      } else {
+        alert("Error al guardar.");
+      }
+    });
+  });
+
+  document.getElementById("cambiarSectorBtn").addEventListener("click", function () {
+    localStorage.removeItem("sector");
+
+    html5QrCode.stop().then(() => {
+      document.getElementById("reader").style.display = "none";
+    }).catch(() => {
+      document.getElementById("reader").style.display = "none";
+    });
+
+    document.getElementById("cantidad").style.display = "none";
+    document.getElementById("enviarBtn").style.display = "none";
+    document.getElementById("cambiarSectorBtn").style.display = "none";
+    document.getElementById("sectorActivo").style.display = "none";
+    document.getElementById("mensaje").innerText = "Esperando selección de sector...";
+    document.getElementById("seleccionSector").style.display = "block";
+  });
+</script>
+</body>
+</html>

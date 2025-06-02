@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Escáner de Código de Barras</title>
+  <title>Escáner por usuario y sector</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     html, body {
@@ -18,7 +18,13 @@
 
     h2 {
       margin: 10px 0;
-      font-size: 2.5em;
+      font-size: 2.2em;
+    }
+
+    #estadoActual {
+      font-size: 1.3em;
+      color: green;
+      margin-bottom: 10px;
     }
 
     #reader {
@@ -30,12 +36,12 @@
 
     #mensaje {
       margin-top: 10px;
-      font-size: 1.5em;
+      font-size: 1.3em;
       color: #333;
     }
 
     #cantidad {
-      font-size: 2em;
+      font-size: 1.8em;
       margin: 20px 0;
       padding: 10px;
       width: 200px;
@@ -43,22 +49,21 @@
     }
 
     #enviarBtn {
-      font-size: 1.8em;
+      font-size: 1.5em;
       padding: 10px 20px;
       cursor: pointer;
     }
 
     select, button {
-      font-size: 1.2em;
+      font-size: 1.1em;
       margin: 10px;
     }
   </style>
 </head>
-
 <body>
 <audio id="sonidoBeep" src="beep-472.mp3" preload="auto"></audio>
 
-<div id="seleccionUsuarioSector" style="text-align:center; margin-top:20px;">
+<div id="seleccionDatos" style="text-align:center; margin-top:20px;">
   <h2>Identificación</h2>
   <label for="usuario">Usuario:</label>
   <select id="usuario"></select>
@@ -66,11 +71,12 @@
   <label for="sector">Sector:</label>
   <select id="sector"></select>
 
-  <button onclick="guardarSeleccion()">Confirmar</button>
+  <button onclick="guardarDatos()">Confirmar</button>
 </div>
 
 <h2>Escanear código de barras</h2>
-<button id="cambiarUsuarioBtn" style="display:none; font-size: 1em; margin-top: 10px;">Cambiar usuario o sector</button>
+<p id="estadoActual" style="display: none;"></p>
+<button id="cambiarDatosBtn" style="display:none;">Cambiar usuario o sector</button>
 <div id="reader"></div>
 <p id="mensaje">Esperando escaneo...</p>
 <input type="number" id="cantidad" placeholder="Cantidad" />
@@ -81,30 +87,28 @@
   const html5QrCode = new Html5Qrcode("reader");
   const config = { fps: 10, qrbox: { width: 400, height: 300 } };
 
-  // Define tus usuarios y sectores válidos aquí
   const usuariosValidos = ["Pedro", "Maria", "Juana"];
   const sectoresValidos = ["Sector1", "Sector2", "Sector3"];
 
   function poblarOpciones() {
     const usuarioSelect = document.getElementById("usuario");
-    const sectorSelect = document.getElementById("sector");
-
-    usuariosValidos.forEach(usuario => {
+    usuariosValidos.forEach(u => {
       const opt = document.createElement("option");
-      opt.value = usuario;
-      opt.textContent = usuario;
+      opt.value = u;
+      opt.textContent = u;
       usuarioSelect.appendChild(opt);
     });
 
-    sectoresValidos.forEach(sector => {
+    const sectorSelect = document.getElementById("sector");
+    sectoresValidos.forEach(s => {
       const opt = document.createElement("option");
-      opt.value = sector;
-      opt.textContent = sector;
+      opt.value = s;
+      opt.textContent = s;
       sectorSelect.appendChild(opt);
     });
   }
 
-  function guardarSeleccion() {
+  function guardarDatos() {
     const usuario = document.getElementById("usuario").value;
     const sector = document.getElementById("sector").value;
 
@@ -116,16 +120,21 @@
     localStorage.setItem("usuario", usuario);
     localStorage.setItem("sector", sector);
 
-    document.getElementById("seleccionUsuarioSector").style.display = "none";
+    document.getElementById("seleccionDatos").style.display = "none";
     mostrarElementos();
     html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
   }
 
   function mostrarElementos() {
+    const usuario = localStorage.getItem("usuario");
+    const sector = localStorage.getItem("sector");
+    document.getElementById("estadoActual").innerText = `Escaneando: ${usuario} en ${sector}`;
+    document.getElementById("estadoActual").style.display = "block";
+
     document.getElementById("reader").style.display = "block";
     document.getElementById("cantidad").style.display = "block";
     document.getElementById("enviarBtn").style.display = "inline-block";
-    document.getElementById("cambiarUsuarioBtn").style.display = "inline-block";
+    document.getElementById("cambiarDatosBtn").style.display = "inline-block";
   }
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -134,16 +143,17 @@
     document.getElementById("reader").style.display = "none";
     document.getElementById("cantidad").style.display = "none";
     document.getElementById("enviarBtn").style.display = "none";
-    document.getElementById("cambiarUsuarioBtn").style.display = "none";
+    document.getElementById("cambiarDatosBtn").style.display = "none";
+    document.getElementById("estadoActual").style.display = "none";
 
     if (localStorage.getItem("usuario") && localStorage.getItem("sector")) {
-      document.getElementById("seleccionUsuarioSector").style.display = "none";
+      document.getElementById("seleccionDatos").style.display = "none";
       mostrarElementos();
       html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
     }
   });
 
-  function onScanSuccess(decodedText, decodedResult) {
+  function onScanSuccess(decodedText) {
     ultimoCodigo = decodedText;
     document.getElementById("mensaje").innerText = "Código recién escaneado: " + decodedText;
     document.getElementById("sonidoBeep").play();
@@ -157,6 +167,18 @@
 
   document.getElementById("enviarBtn").addEventListener("click", function () {
     const cantidad = document.getElementById("cantidad").value;
+    const usuario = localStorage.getItem("usuario");
+    const sector = localStorage.getItem("sector");
+
+    if (!usuario || !usuariosValidos.includes(usuario)) {
+      alert("Usuario no válido.");
+      return;
+    }
+
+    if (!sector || !sectoresValidos.includes(sector)) {
+      alert("Sector no válido.");
+      return;
+    }
 
     if (ultimoCodigo === "") {
       alert("Primero debes escanear un código.");
@@ -168,9 +190,6 @@
       return;
     }
 
-    const usuario = localStorage.getItem("usuario");
-    const sector = localStorage.getItem("sector");
-
     fetch("guardar_codigo.php", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -181,7 +200,8 @@
         "&sector=" + encodeURIComponent(sector)
     }).then(res => {
       if (res.ok) {
-        document.getElementById("mensaje").innerText = "Guardado: " + ultimoCodigo + " x" + cantidad;
+        document.getElementById("mensaje").innerText =
+          `Guardado: ${usuario} en ${sector} → ${ultimoCodigo} x${cantidad}`;
         document.getElementById("cantidad").value = "";
         ultimoCodigo = "";
       } else {
@@ -190,7 +210,7 @@
     });
   });
 
-  document.getElementById("cambiarUsuarioBtn").addEventListener("click", function () {
+  document.getElementById("cambiarDatosBtn").addEventListener("click", function () {
     localStorage.removeItem("usuario");
     localStorage.removeItem("sector");
 
@@ -202,9 +222,10 @@
 
     document.getElementById("cantidad").style.display = "none";
     document.getElementById("enviarBtn").style.display = "none";
-    document.getElementById("cambiarUsuarioBtn").style.display = "none";
+    document.getElementById("cambiarDatosBtn").style.display = "none";
+    document.getElementById("estadoActual").style.display = "none";
     document.getElementById("mensaje").innerText = "Esperando selección de usuario y sector...";
-    document.getElementById("seleccionUsuarioSector").style.display = "block";
+    document.getElementById("seleccionDatos").style.display = "block";
   });
 </script>
 </body>
