@@ -22,9 +22,11 @@
     }
 
     #estadoActual {
-      font-size: 3.5em;
+      font-size: 3em;
       color: green;
       margin-bottom: 10px;
+      padding-left: 20px;
+      padding-right: 20px;
     }
 
     #reader {
@@ -37,7 +39,16 @@
     #mensaje {
       margin-top: 10px;
       font-size: 3.5em;
+      padding-left: 20px;
+      padding-right: 20px;
       color: #333;
+    }
+
+    .titulos {  
+      font-size: 3em;
+      color: #333;
+      display: block;    /* importante para que el margin funcione verticalmente */
+      margin-bottom: 10px; /* este es el espacio entre el label y el select */
     }
 
     #seleccionDatos {
@@ -46,7 +57,65 @@
       align-items: center;
       margin-top: 20px;
     }
-   
+
+    .boton-confirmar {
+      font-size: 3.5em;
+      padding: 15px 30px;
+      background-color: #007BFF;        /* Azul principal */
+      color: white;
+      border: none;
+      border-radius: 8px;               /* Bordes redondeados */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra sutil */
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s;
+      margin-top: 80px;
+    }
+
+    /* Efecto hover */
+    .boton-confirmar:hover {
+      background-color: #0056b3;       /* Azul más oscuro al pasar el mouse */
+      transform: translateY(-2px);     /* Ligero levantamiento */
+    }
+
+    /* Efecto al hacer clic */
+    .boton-confirmar:active {
+      background-color: #004080;
+      transform: translateY(0);
+    }
+
+    .mttop-botoncambio {
+      margin-top: 20px !important;
+      background-color: #ff9100 !important;
+    }
+
+
+      .select-estilizado {
+    font-size: 3.5em;
+    padding: 12px 20px;
+    border: 2px solid #007BFF;         /* Borde azul */
+    border-radius: 8px;                /* Bordes redondeados */
+    background-color: #f0f8ff;         /* Azul muy claro (AliceBlue) */
+    color: #333;
+    appearance: none;                  /* Oculta el estilo nativo del navegador */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+    cursor: pointer;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    width: 90vw;
+    max-width: 600px;
+  }
+
+  /* Hover */
+  .select-estilizado:hover {
+    border-color: #0056b3;
+  }
+
+  /* Focus (cuando se hace clic en el select) */
+  .select-estilizado:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.4);
+  }
 
     select, button {
       font-size: 3.5em;
@@ -58,19 +127,26 @@
 <audio id="sonidoBeep" src="beep-472.mp3" preload="auto"></audio>
 
 <div id="seleccionDatos" style="text-align:center; margin-top:20px;">
-  <h2>Identificación</h2>
-  <label for="usuario">Usuario:</label>
-  <select id="usuario"></select>
+  <h2>Registra tus datos</h2>
 
-  <label for="sector">Sector:</label>
-  <select id="sector"></select>
+  <div>
+  <label for="usuario" class="titulos">Seleccione usuario:</label>
+  <select id="usuario" class="select-estilizado"></select>></select>
+  </div>
 
-  <button onclick="guardarDatos()">Confirmar</button>
+  <div>
+  <label for="sector" class="titulos">Seleccione Rack a escanear:</label>
+  <select id="sector" class="select-estilizado"></select>></select>
+  </div>
+
+ 
+  <button onclick="guardarDatos()" class="boton-confirmar">Confirmar</button>
+  </div>
 </div>
 
 <h2>Escanear código de barras</h2>
 <p id="estadoActual" style="display: none;"></p>
-<button id="cambiarDatosBtn" style="display:none;">Cambiar usuario o sector</button>
+<button id="cambiarDatosBtn" style="display:none;" class="boton-confirmar mttop-botoncambio">Cambiar usuario o rack</button>
 <div id="reader"></div>
 <p id="mensaje">Esperando escaneo...</p>
 
@@ -119,7 +195,7 @@
   function mostrarElementos() {
     const usuario = localStorage.getItem("usuario");
     const sector = localStorage.getItem("sector");
-    document.getElementById("estadoActual").innerText = `Escaneando: ${usuario} en ${sector}`;
+    document.getElementById("estadoActual").innerText = `${usuario} actualmente estas escaneando el rack ${sector}`;
     document.getElementById("estadoActual").style.display = "block";
 
     document.getElementById("reader").style.display = "block";
@@ -154,7 +230,7 @@
       return;
     }
 
-    document.getElementById("mensaje").innerText = `Ultimo codigo escaneado por ${usuario} en ${sector} → Código: ${decodedText}`;
+    document.getElementById("mensaje").innerText = `${usuario} este es el ultimo codigo que escaneaste ${decodedText} en el rack ${sector}`;
     document.getElementById("sonidoBeep").play();
 
     fetch("guardar_codigo.php", {
