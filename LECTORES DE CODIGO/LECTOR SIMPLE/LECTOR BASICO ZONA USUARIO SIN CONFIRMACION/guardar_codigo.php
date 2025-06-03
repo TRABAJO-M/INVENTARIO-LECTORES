@@ -6,8 +6,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $sector = trim($_POST["sector"] ?? '');
     $usuario = preg_replace('/[^a-zA-Z0-9_-]/', '', $_POST["usuario"] ?? '');
 
-$usuariosValidos = ["Cristobal", "Ruben", "Sebastian", "Jhoan", "Matias","Claudio", "Renato"];
-$sectoresValidos = ["Rack 1", "Rack 2", "Rack 3", "Rack 4", "Rack 5", "Rack 6", "Rack 7", "Rack 8", "Rack 9", "Rack 10", "Rack 11", "Rack 12", "Rack 13"];
+$usuariosValidos = ["Cristobal", "Ruben", "Andrea", "Juan", "Sebastian", "Jhoan", "Matias","Claudio", "Renato"];
+$sectoresValidos = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"];
 
     if (!in_array($usuario, $usuariosValidos) || !in_array($sector, $sectoresValidos)) {
         http_response_code(403);
