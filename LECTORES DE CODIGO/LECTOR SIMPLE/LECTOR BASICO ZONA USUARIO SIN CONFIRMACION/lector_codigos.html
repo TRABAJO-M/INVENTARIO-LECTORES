@@ -148,7 +148,7 @@
 <p id="estadoActual" style="display: none;"></p>
 <button id="cambiarDatosBtn" style="display:none;" class="boton-confirmar mttop-botoncambio">Cambiar usuario o rack</button>
 <div id="reader"></div>
-<p id="mensaje">Esperando escaneo...</p>
+<p id="mensaje">Selecciona tu usuario, rack a escanear y presiona confirmar...</p>
 
 <script>
   const html5QrCode = new Html5Qrcode("reader");
@@ -200,6 +200,7 @@
 
     document.getElementById("reader").style.display = "block";
     document.getElementById("cambiarDatosBtn").style.display = "inline-block";
+    document.getElementById("mensaje").innerText = "Puedes comenzar el escaneo";
   }
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -261,7 +262,7 @@
 
     document.getElementById("cambiarDatosBtn").style.display = "none";
     document.getElementById("estadoActual").style.display = "none";
-    document.getElementById("mensaje").innerText = "Esperando selección de usuario y sector...";
+    document.getElementById("mensaje").innerText = "Esperando a que selecciones tu usuario y el rack que quieres escanear.";
     document.getElementById("seleccionDatos").style.display = "block";
   });
 </script>
