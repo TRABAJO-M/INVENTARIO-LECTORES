@@ -22,7 +22,7 @@ $sectoresValidos = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12
 // SECCION PARA CORREGIR FORMATO DEL MENSAJE QUE LLEGARA AL ARCHIVO DE NOTAS
     if ($codigo !== '') {
         $fecha = date("d/m/Y H:i:s");
-        $linea = "Código: *$codigo | *$fecha* | Usuario: *$usuario* | Bodega: *$bodega* | Rack: *$sector*" . PHP_EOL;
+        $linea = "Código: *$codigo* | *$fecha* | Usuario: *$usuario* | Bodega: *$bodega* | Rack: *$sector*" . PHP_EOL;
 // FIN SECCION PARA CORREGIR FORMATO DEL MENSAJE QUE LLEGARA AL ARCHIVO DE NOTAS
         $archivo = "registros/codigos.txt";
         if (!is_dir("registros")) {
