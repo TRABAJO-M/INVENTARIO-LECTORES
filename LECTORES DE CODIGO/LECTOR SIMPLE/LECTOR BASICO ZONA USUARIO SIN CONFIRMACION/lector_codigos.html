@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Escáner automático</title>
+  <title>Escáner de inventario</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     html, body {
@@ -124,14 +124,21 @@
   </style>
 </head>
 <body>
+<!-- AUDIO QUE REPRODUCE AL MARCAR   -->
 <audio id="sonidoBeep" src="beep-472.mp3" preload="auto"></audio>
-
+<!-- FIN AUDIO QUE REPRODUCE AL MARCAR   -->
+<!-- SECCION PARA SELECCIÓN DE USUARIO, BODEGA Y RACK   -->
 <div id="seleccionDatos" style="text-align:center; margin-top:20px;">
   <h2>Registra tus datos</h2>
 
   <div>
   <label for="usuario" class="titulos">Seleccione usuario:</label>
   <select id="usuario" class="select-estilizado"></select>></select>
+  </div>
+
+  <div>
+  <label for="bodega" class="titulos">Seleccione bodega:</label>
+  <select id="bodega" class="select-estilizado"></select>
   </div>
 
   <div>
@@ -143,6 +150,7 @@
   <button onclick="guardarDatos()" class="boton-confirmar">Confirmar</button>
   </div>
 </div>
+<!-- FIN SECCION PARA SELECCIÓN DE USUARIO, BODEGA Y RACK   -->
 
 <h2>Escanear código de barras</h2>
 <p id="estadoActual" style="display: none;"></p>
@@ -154,9 +162,14 @@
   const html5QrCode = new Html5Qrcode("reader");
   const config = { fps: 10, qrbox: { width: 400, height: 300 } };
 
+  // SECTOR PARA AGREGAR NUEVAS OPCIONES DE REGISTRO
   const usuariosValidos = ["Cristobal", "Ruben", "Andrea", "Juan", "Sebastian", "Jhoan", "Matias","Claudio", "Renato"];
-  const sectoresValidos = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"];
+  const bodegasValidas = ["Primer Piso", "Segundo Piso", "Bodega G3", "Pintura y Lubricante", "Vidrios", "Container", "Vulcanizacion"]; // Puedes agregar más
+  const sectoresValidos = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "Piso o Pared"];
 
+  // FIN SECTOR PARA AGREGAR NUEVAS OPCIONES DE REGISTRO
+
+  // SECCION PARA BUSCAR LAS OPCIONES QUE SE MUESTRAN EN EL SELECT
   function poblarOpciones() {
     const usuarioSelect = document.getElementById("usuario");
     usuariosValidos.forEach(u => {
@@ -164,6 +177,14 @@
       opt.value = u;
       opt.textContent = u;
       usuarioSelect.appendChild(opt);
+    });
+
+    const bodegaSelect = document.getElementById("bodega");
+    bodegasValidas.forEach(b => {
+      const opt = document.createElement("option");
+      opt.value = b;
+      opt.textContent = b;
+      bodegaSelect.appendChild(opt);
     });
 
     const sectorSelect = document.getElementById("sector");
@@ -174,28 +195,35 @@
       sectorSelect.appendChild(opt);
     });
   }
+  // FIN SECCION PARA BUSCAR LAS OPCIONES QUE SE MUESTRAN EN EL SELECT
 
+  // SECCION PARA GUARDAR LOS DATOS QUE SELECCIONA EL USUARIO AL INICIO
   function guardarDatos() {
     const usuario = document.getElementById("usuario").value;
-    const sector = document.getElementById("sector").value;
+    const bodega = document.getElementById("bodega").value;
+    const sector = document.getElementById("sector").value;     
 
-    if (!usuario || !sector) {
-      alert("Debes seleccionar usuario y sector.");
+    if (!usuario || !bodega || !sector) {
+      alert("Debes seleccionar usuario bodega y rack.");
       return;
     }
 
     localStorage.setItem("usuario", usuario);
+    localStorage.setItem("bodega", bodega);
     localStorage.setItem("sector", sector);
 
     document.getElementById("seleccionDatos").style.display = "none";
     mostrarElementos();
     html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
   }
+  // FIN SECCION PARA GUARDAR LOS DATOS QUE SELECCIONA EL USUARIO AL INICIO
 
+  // SECCION PARA MOSTRAR MENSAJE DE ESCANEO ACTUAL Y PARA ESCONDER BOTONES DE OTRA INSTANCIA
   function mostrarElementos() {
     const usuario = localStorage.getItem("usuario");
+    const bodega = localStorage.getItem("bodega");
     const sector = localStorage.getItem("sector");
-    document.getElementById("estadoActual").innerText = `${usuario} actualmente estas escaneando el rack ${sector}`;
+    document.getElementById("estadoActual").innerText = `${usuario} actualmente estas escaneando el rack ${sector} en la bodega ${bodega}`;
     document.getElementById("estadoActual").style.display = "block";
 
     document.getElementById("reader").style.display = "block";
@@ -216,9 +244,12 @@
       html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
     }
   });
+  // FIN SECCION PARA MOSTRAR MENSAJE DE ESCANEO ACTUAL Y PARA ESCONDER BOTONES DE OTRA INSTANCIA
 
+  // SECCION PARA INCLUIR LOS DATOS QUE SERÁN ENVIADOS AL SERVIDOR
   function onScanSuccess(decodedText) {
     const usuario = localStorage.getItem("usuario");
+    const bodega = localStorage.getItem("bodega");
     const sector = localStorage.getItem("sector");
 
     if (!usuario || !usuariosValidos.includes(usuario)) {
@@ -240,8 +271,10 @@
       body:
         "codigo=" + encodeURIComponent(decodedText) +
         "&usuario=" + encodeURIComponent(usuario) +
-        "&sector=" + encodeURIComponent(sector)
+        "&sector=" + encodeURIComponent(sector) +
+        "&bodega=" + encodeURIComponent(bodega)
     });
+    // FIN SECCION PARA INCLUIR LOS DATOS QUE SERÁN ENVIADOS AL SERVIDOR
 
     html5QrCode.stop().then(() => {
       setTimeout(() => {
