@@ -132,17 +132,17 @@
   <h2>Registra tus datos</h2>
 
   <div>
-  <label for="usuario" class="titulos">Seleccione usuario:</label>
+  <label for="usuario" class="titulos">Selecciona tu usuario:</label>
   <select id="usuario" class="select-estilizado"></select>></select>
   </div>
 
   <div>
-  <label for="bodega" class="titulos">Seleccione bodega:</label>
+  <label for="bodega" class="titulos">Seleccione la bodega:</label>
   <select id="bodega" class="select-estilizado"></select>
   </div>
 
   <div>
-  <label for="sector" class="titulos">Seleccione Rack a escanear:</label>
+  <label for="sector" class="titulos">Selecciona la zona a escanear:</label>
   <select id="sector" class="select-estilizado"></select>></select>
   </div>
 
@@ -154,9 +154,9 @@
 
 <h2>Escanear código de barras</h2>
 <p id="estadoActual" style="display: none;"></p>
-<button id="cambiarDatosBtn" style="display:none;" class="boton-confirmar mttop-botoncambio">Cambiar usuario o rack</button>
+<button id="cambiarDatosBtn" style="display:none;" class="boton-confirmar mttop-botoncambio">Cambiar usuario, bodega o zona</button>
 <div id="reader"></div>
-<p id="mensaje">Selecciona tu usuario, rack a escanear y presiona confirmar...</p>
+<p id="mensaje">Selecciona tu usuario, bodega, zona a escanear y presiona confirmar...</p>
 
 <script>
   const html5QrCode = new Html5Qrcode("reader");
@@ -223,7 +223,7 @@
     const usuario = localStorage.getItem("usuario");
     const bodega = localStorage.getItem("bodega");
     const sector = localStorage.getItem("sector");
-    document.getElementById("estadoActual").innerText = `${usuario} actualmente estas escaneando el rack ${sector} en la bodega ${bodega}`;
+    document.getElementById("estadoActual").innerText = `${usuario} actualmente estas escaneando la zona: ${sector} , en la bodega: ${bodega}`;
     document.getElementById("estadoActual").style.display = "block";
 
     document.getElementById("reader").style.display = "block";
@@ -262,7 +262,7 @@
       return;
     }
 
-    document.getElementById("mensaje").innerText = `${usuario} este es el ultimo codigo que escaneaste ${decodedText} en el rack ${sector}`;
+    document.getElementById("mensaje").innerText = `${usuario} este es el ultimo codigo que escaneaste: ${decodedText}, en la zona: ${sector} de la bodega: ${bodega} `;
     document.getElementById("sonidoBeep").play();
 
     fetch("guardar_codigo.php", {
@@ -295,7 +295,7 @@
 
     document.getElementById("cambiarDatosBtn").style.display = "none";
     document.getElementById("estadoActual").style.display = "none";
-    document.getElementById("mensaje").innerText = "Esperando a que selecciones tu usuario y el rack que quieres escanear.";
+    document.getElementById("mensaje").innerText = "Esperando a que selecciones tu usuario, bodega y la zona que quieres escanear.";
     document.getElementById("seleccionDatos").style.display = "block";
   });
 </script>
