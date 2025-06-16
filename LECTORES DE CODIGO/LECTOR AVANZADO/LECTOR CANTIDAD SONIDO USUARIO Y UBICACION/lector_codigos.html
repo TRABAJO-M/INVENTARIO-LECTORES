@@ -171,9 +171,11 @@
 
 // EMITE SONIDO INMEDIATAMENTE LUEGO DE ESCANEAR
     document.getElementById("sonidoBeep").play();
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    
 // FIN EMITE SONIDO LUEGO DE ESCANEAR
 
-    document.getElementById("formCantidad").style.display = "flex";
+    document.getElementById("formCantidad").style.display = "flex";    
     document.getElementById("mensaje").innerText = `Código escaneado: ${decodedText}. Ingresa la cantidad.`;
     document.getElementById("cantidad").value = "";
     document.getElementById("cantidad").focus();

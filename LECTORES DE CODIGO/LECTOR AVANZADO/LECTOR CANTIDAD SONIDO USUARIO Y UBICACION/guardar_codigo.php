@@ -28,15 +28,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     // Preparar línea a guardar
-    $fecha = date("d/m/Y H:i:s");
-    $linea = "Código: *$codigo* | Cantidad: *$cantidad* | Fecha: *$fecha* | Usuario: *$usuario* | Bodega: *$bodega* | Zona: *$sector*" . PHP_EOL;
-
+    $fecha = date("d/m/Y");
+    $hora = date("H:i:s");
+    $linea = "$fecha;$hora;$codigo;$cantidad;$usuario;$bodega;$sector" . PHP_EOL;
+    //  $linea = "Código: *$codigo* | Cantidad: *$cantidad* | Fecha: *$fecha* | Usuario: *$usuario* | Bodega: *$bodega* | Zona: *$sector*" .  // LINEA ANTERIOR
     // Guardar en archivo
-    $archivo = "registros/codigos.txt";
+    $archivo = "registros/codigos.csv";
+
     if (!is_dir("registros")) {
         mkdir("registros", 0777, true);
     }
+     
+    // ✅ Si el archivo no existe, escribir cabecera primero
+    if (!file_exists($archivo)) {
+        $cabecera = "Fecha;Hora;Codigo;Cantidad;Usuario;Bodega;Zona" . PHP_EOL;
+        file_put_contents($archivo, $cabecera, FILE_APPEND);
+    }
 
+// ESCRIBIR AL FINAL, SI EL ARCHIVO YA EXISTE AL FINAL DEL ARCHIVO
     file_put_contents($archivo, $linea, FILE_APPEND);
 
     // Confirmación simple
