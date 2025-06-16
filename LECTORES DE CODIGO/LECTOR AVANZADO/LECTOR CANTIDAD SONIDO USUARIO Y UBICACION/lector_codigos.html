@@ -25,7 +25,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-top: 20px;
+      margin-top: 10px;
     }
     .boton-confirmar {
       font-size: 3.5em;
@@ -39,6 +39,20 @@
       transition: background-color 0.3s, transform 0.2s;
       margin-top: 80px;
     }
+
+    .boton-enviar {
+      font-size: 3.5em;
+      padding: 15px 30px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s;
+      margin-top: 20px;
+    }
+
     .boton-confirmar:hover { background-color: #0056b3; transform: translateY(-2px); }
     .boton-confirmar:active { background-color: #004080; transform: translateY(0); }
     .mttop-botoncambio { margin-top: 20px !important; background-color: #ff9100 !important; }
@@ -54,7 +68,7 @@
     }
     input[type="number"] {
       font-size: 3em;
-      padding: 12px;
+      padding: 6px;
       width: 250px;
       text-align: center;
     }
@@ -78,17 +92,26 @@
 
 <!-- ESCANEO -->
 <h2>Escanear código de barras</h2>
-<p id="estadoActual" style="display:none;"></p>
+
 <button id="cambiarDatosBtn" style="display:none;" class="boton-confirmar mttop-botoncambio">Cambiar usuario, bodega o zona</button>
+
 <div id="reader"></div>
-<p id="mensaje">Selecciona tu usuario, bodega y zona para comenzar...</p>
 
 <!-- FORMULARIO DE CANTIDAD -->
 <div id="formCantidad" style="display:none;">
   <label class="titulos" for="cantidad">Ingresa la cantidad:</label>
   <input type="number" id="cantidad" min="1" />
-  <button id="btnEnviarCantidad" class="boton-confirmar">Enviar</button>
+  <button id="btnEnviarCantidad" class="boton-enviar">Enviar</button>
 </div>
+<!-- FIN FORMULARIO DE CANTIDAD -->
+
+<!-- MENSAJE DE CONFIRMACION DE ESCANEO -->
+<p id="mensaje">Selecciona tu usuario, bodega y zona para comenzar...</p>
+<!-- FIN MENSAJE DE CONFIRMACION DE ESCANEO -->
+
+<!-- MENSAJE DE UBICACION ACTUAL -->
+<p id="estadoActual" style="display:none;"></p>
+<!-- FIN MENSAJE DE UBICACION ACTUAL -->
 
 <script>
   let esperandoCantidad = false;
@@ -133,9 +156,10 @@
     const usuario = localStorage.getItem("usuario");
     const bodega = localStorage.getItem("bodega");
     const sector = localStorage.getItem("sector");
-    document.getElementById("estadoActual").innerText = `${usuario} escaneando zona ${sector} en bodega ${bodega}`;
+    document.getElementById("estadoActual").innerText = `${usuario} actualmente estas escaneando la zona ${sector} en sector: ${bodega}`;
     document.getElementById("estadoActual").style.display = "block";
     document.getElementById("reader").style.display = "block";
+    document.getElementById("formCantidad").style.display = "flex"; // ✅ ahora se muestra justo después de confirmar
     document.getElementById("cambiarDatosBtn").style.display = "inline-block";
     document.getElementById("mensaje").innerText = "Escanea un código para continuar";
   }
@@ -144,10 +168,17 @@
     if (esperandoCantidad) return;
     esperandoCantidad = true;
     codigoEscaneado = decodedText;
+
+// EMITE SONIDO INMEDIATAMENTE LUEGO DE ESCANEAR
+    document.getElementById("sonidoBeep").play();
+// FIN EMITE SONIDO LUEGO DE ESCANEAR
+
     document.getElementById("formCantidad").style.display = "flex";
     document.getElementById("mensaje").innerText = `Código escaneado: ${decodedText}. Ingresa la cantidad.`;
     document.getElementById("cantidad").value = "";
     document.getElementById("cantidad").focus();
+  
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   }
 
   document.getElementById("btnEnviarCantidad").addEventListener("click", function () {
@@ -161,8 +192,8 @@
       return;
     }
 
-    document.getElementById("sonidoBeep").play();
-    document.getElementById("mensaje").innerText = `${usuario} guardó código: ${codigoEscaneado}, cantidad: ${cantidad}, zona: ${sector}, bodega: ${bodega}`;
+
+    document.getElementById("mensaje").innerText = `${usuario} este es el último codigo que escaneaste: ${codigoEscaneado}, con cantidad: ${cantidad}, en la zona: ${sector}, de: ${bodega} \n Para seguir escaneando, simplemente escanea un nuevo código`;
 
     fetch("guardar_codigo.php", {
       method: "POST",
@@ -179,14 +210,7 @@
 
   document.getElementById("cambiarDatosBtn").addEventListener("click", function () {
     localStorage.clear();
-    html5QrCode.stop().then(() => {
-      document.getElementById("reader").style.display = "none";
-      document.getElementById("formCantidad").style.display = "none";
-      document.getElementById("seleccionDatos").style.display = "block";
-      document.getElementById("estadoActual").style.display = "none";
-      document.getElementById("mensaje").innerText = "Selecciona tu usuario, bodega y zona para comenzar...";
-      esperandoCantidad = false;
-    });
+    window.location.reload(); // ← limpia todo y vuelve a cargar el estado inicial
   });
 
   document.addEventListener("DOMContentLoaded", () => {
