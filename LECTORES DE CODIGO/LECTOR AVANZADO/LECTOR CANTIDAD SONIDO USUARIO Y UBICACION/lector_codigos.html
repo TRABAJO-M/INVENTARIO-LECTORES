@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Escáner por usuario y sector</title>
+  <title>Escáner de inventario</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     html, body {
@@ -18,13 +18,15 @@
 
     h2 {
       margin: 10px 0;
-      font-size: 2.2em;
+      font-size: 3.5em;
     }
 
     #estadoActual {
-      font-size: 1.3em;
+      font-size: 3em;
       color: green;
       margin-bottom: 10px;
+      padding-left: 20px;
+      padding-right: 20px;
     }
 
     #reader {
@@ -36,60 +38,138 @@
 
     #mensaje {
       margin-top: 10px;
-      font-size: 1.3em;
+      font-size: 3.5em;
+      padding-left: 20px;
+      padding-right: 20px;
       color: #333;
     }
 
-    #cantidad {
-      font-size: 1.8em;
-      margin: 20px 0;
-      padding: 10px;
-      width: 200px;
-      text-align: center;
+    .titulos {  
+      font-size: 3em;
+      color: #333;
+      display: block;    /* importante para que el margin funcione verticalmente */
+      margin-bottom: 10px; /* este es el espacio entre el label y el select */
     }
 
-    #enviarBtn {
-      font-size: 1.5em;
-      padding: 10px 20px;
-      cursor: pointer;
+    #seleccionDatos {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
     }
+
+    .boton-confirmar {
+      font-size: 3.5em;
+      padding: 15px 30px;
+      background-color: #007BFF;        /* Azul principal */
+      color: white;
+      border: none;
+      border-radius: 8px;               /* Bordes redondeados */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra sutil */
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s;
+      margin-top: 80px;
+    }
+
+    /* Efecto hover */
+    .boton-confirmar:hover {
+      background-color: #0056b3;       /* Azul más oscuro al pasar el mouse */
+      transform: translateY(-2px);     /* Ligero levantamiento */
+    }
+
+    /* Efecto al hacer clic */
+    .boton-confirmar:active {
+      background-color: #004080;
+      transform: translateY(0);
+    }
+
+    .mttop-botoncambio {
+      margin-top: 20px !important;
+      background-color: #ff9100 !important;
+    }
+
+
+      .select-estilizado {
+    font-size: 3.5em;
+    padding: 12px 20px;
+    border: 2px solid #007BFF;         /* Borde azul */
+    border-radius: 8px;                /* Bordes redondeados */
+    background-color: #f0f8ff;         /* Azul muy claro (AliceBlue) */
+    color: #333;
+    appearance: none;                  /* Oculta el estilo nativo del navegador */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+    cursor: pointer;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    width: 90vw;
+    max-width: 600px;
+  }
+
+  /* Hover */
+  .select-estilizado:hover {
+    border-color: #0056b3;
+  }
+
+  /* Focus (cuando se hace clic en el select) */
+  .select-estilizado:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.4);
+  }
 
     select, button {
-      font-size: 1.1em;
+      font-size: 3.5em;
       margin: 10px;
     }
   </style>
 </head>
 <body>
+<!-- AUDIO QUE REPRODUCE AL MARCAR   -->
 <audio id="sonidoBeep" src="beep-472.mp3" preload="auto"></audio>
-
+<!-- FIN AUDIO QUE REPRODUCE AL MARCAR   -->
+<!-- SECCION PARA SELECCIÓN DE USUARIO, BODEGA Y RACK   -->
 <div id="seleccionDatos" style="text-align:center; margin-top:20px;">
-  <h2>Identificación</h2>
-  <label for="usuario">Usuario:</label>
-  <select id="usuario"></select>
+  <h2>Registra tus datos</h2>
 
-  <label for="sector">Sector:</label>
-  <select id="sector"></select>
+  <div>
+  <label for="usuario" class="titulos">Selecciona tu usuario:</label>
+  <select id="usuario" class="select-estilizado"></select>></select>
+  </div>
 
-  <button onclick="guardarDatos()">Confirmar</button>
+  <div>
+  <label for="bodega" class="titulos">Seleccione la bodega:</label>
+  <select id="bodega" class="select-estilizado"></select>
+  </div>
+
+  <div>
+  <label for="sector" class="titulos">Selecciona la zona a escanear:</label>
+  <select id="sector" class="select-estilizado"></select>></select>
+  </div>
+
+ 
+  <button onclick="guardarDatos()" class="boton-confirmar">Confirmar</button>
+  </div>
 </div>
+<!-- FIN SECCION PARA SELECCIÓN DE USUARIO, BODEGA Y RACK   -->
 
 <h2>Escanear código de barras</h2>
 <p id="estadoActual" style="display: none;"></p>
-<button id="cambiarDatosBtn" style="display:none;">Cambiar usuario o sector</button>
+<button id="cambiarDatosBtn" style="display:none;" class="boton-confirmar mttop-botoncambio">Cambiar usuario, bodega o zona</button>
 <div id="reader"></div>
-<p id="mensaje">Esperando escaneo...</p>
-<input type="number" id="cantidad" placeholder="Cantidad" />
-<button id="enviarBtn">Enviar</button>
+<p id="mensaje">Selecciona tu usuario, bodega, zona a escanear y presiona confirmar...</p>
 
 <script>
-  let ultimoCodigo = "";
   const html5QrCode = new Html5Qrcode("reader");
   const config = { fps: 10, qrbox: { width: 400, height: 300 } };
 
-  const usuariosValidos = ["Pedro", "Maria", "Juana"];
-  const sectoresValidos = ["Sector1", "Sector2", "Sector3"];
+  // SECTOR PARA AGREGAR NUEVAS OPCIONES DE REGISTRO
+  const usuariosValidos = ["Cristobal", "Ruben", "Andrea", "Juan", "Sebastian", "Jhoan", "Matias","Claudio", "Renato"];
+  const bodegasValidas = ["Primer Piso", "Segundo Piso", "Bodega G3", "Pintura y Lubricante", "Vidrios", "Container", "Vulcanizacion"]; // Puedes agregar más
+  const sectoresValidos = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "Piso o Pared"];
 
+  // FIN SECTOR PARA AGREGAR NUEVAS OPCIONES DE REGISTRO
+
+  // SECCION PARA BUSCAR LAS OPCIONES QUE SE MUESTRAN EN EL SELECT
   function poblarOpciones() {
     const usuarioSelect = document.getElementById("usuario");
     usuariosValidos.forEach(u => {
@@ -97,6 +177,14 @@
       opt.value = u;
       opt.textContent = u;
       usuarioSelect.appendChild(opt);
+    });
+
+    const bodegaSelect = document.getElementById("bodega");
+    bodegasValidas.forEach(b => {
+      const opt = document.createElement("option");
+      opt.value = b;
+      opt.textContent = b;
+      bodegaSelect.appendChild(opt);
     });
 
     const sectorSelect = document.getElementById("sector");
@@ -107,42 +195,46 @@
       sectorSelect.appendChild(opt);
     });
   }
+  // FIN SECCION PARA BUSCAR LAS OPCIONES QUE SE MUESTRAN EN EL SELECT
 
+  // SECCION PARA GUARDAR LOS DATOS QUE SELECCIONA EL USUARIO AL INICIO
   function guardarDatos() {
     const usuario = document.getElementById("usuario").value;
-    const sector = document.getElementById("sector").value;
+    const bodega = document.getElementById("bodega").value;
+    const sector = document.getElementById("sector").value;     
 
-    if (!usuario || !sector) {
-      alert("Debes seleccionar usuario y sector.");
+    if (!usuario || !bodega || !sector) {
+      alert("Debes seleccionar usuario bodega y rack.");
       return;
     }
 
     localStorage.setItem("usuario", usuario);
+    localStorage.setItem("bodega", bodega);
     localStorage.setItem("sector", sector);
 
     document.getElementById("seleccionDatos").style.display = "none";
     mostrarElementos();
     html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
   }
+  // FIN SECCION PARA GUARDAR LOS DATOS QUE SELECCIONA EL USUARIO AL INICIO
 
+  // SECCION PARA MOSTRAR MENSAJE DE ESCANEO ACTUAL Y PARA ESCONDER BOTONES DE OTRA INSTANCIA
   function mostrarElementos() {
     const usuario = localStorage.getItem("usuario");
+    const bodega = localStorage.getItem("bodega");
     const sector = localStorage.getItem("sector");
-    document.getElementById("estadoActual").innerText = `Escaneando: ${usuario} en ${sector}`;
+    document.getElementById("estadoActual").innerText = `${usuario} actualmente estas escaneando la zona: ${sector} , en la bodega: ${bodega}`;
     document.getElementById("estadoActual").style.display = "block";
 
     document.getElementById("reader").style.display = "block";
-    document.getElementById("cantidad").style.display = "block";
-    document.getElementById("enviarBtn").style.display = "inline-block";
     document.getElementById("cambiarDatosBtn").style.display = "inline-block";
+    document.getElementById("mensaje").innerText = "Puedes comenzar el escaneo";
   }
 
   document.addEventListener("DOMContentLoaded", () => {
     poblarOpciones();
 
     document.getElementById("reader").style.display = "none";
-    document.getElementById("cantidad").style.display = "none";
-    document.getElementById("enviarBtn").style.display = "none";
     document.getElementById("cambiarDatosBtn").style.display = "none";
     document.getElementById("estadoActual").style.display = "none";
 
@@ -152,22 +244,12 @@
       html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
     }
   });
+  // FIN SECCION PARA MOSTRAR MENSAJE DE ESCANEO ACTUAL Y PARA ESCONDER BOTONES DE OTRA INSTANCIA
 
+  // SECCION PARA INCLUIR LOS DATOS QUE SERÁN ENVIADOS AL SERVIDOR
   function onScanSuccess(decodedText) {
-    ultimoCodigo = decodedText;
-    document.getElementById("mensaje").innerText = "Código recién escaneado: " + decodedText;
-    document.getElementById("sonidoBeep").play();
-
-    html5QrCode.stop().then(() => {
-      setTimeout(() => {
-        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
-      }, 1500);
-    });
-  }
-
-  document.getElementById("enviarBtn").addEventListener("click", function () {
-    const cantidad = document.getElementById("cantidad").value;
     const usuario = localStorage.getItem("usuario");
+    const bodega = localStorage.getItem("bodega");
     const sector = localStorage.getItem("sector");
 
     if (!usuario || !usuariosValidos.includes(usuario)) {
@@ -180,37 +262,60 @@
       return;
     }
 
-    if (ultimoCodigo === "") {
-      alert("Primero debes escanear un código.");
-      return;
-    }
-
-    if (cantidad === "" || isNaN(cantidad) || cantidad <= 0) {
-      alert("Por favor, ingresa una cantidad válida.");
-      return;
-    }
+    document.getElementById("mensaje").innerText = `${usuario} este es el ultimo codigo que escaneaste: ${decodedText}, en la zona: ${sector} de la bodega: ${bodega} `;
+    document.getElementById("sonidoBeep").play();
 
     fetch("guardar_codigo.php", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body:
-        "codigo=" + encodeURIComponent(ultimoCodigo) +
-        "&cantidad=" + encodeURIComponent(cantidad) +
+        "codigo=" + encodeURIComponent(decodedText) +
         "&usuario=" + encodeURIComponent(usuario) +
-        "&sector=" + encodeURIComponent(sector)
-    }).then(res => {
-      if (res.ok) {
-        document.getElementById("mensaje").innerText =
-          `Guardado: ${usuario} en ${sector} → ${ultimoCodigo} x${cantidad}`;
-        document.getElementById("cantidad").value = "";
-        ultimoCodigo = "";
-      } else {
-        alert("Error al guardar.");
-      }
+        "&sector=" + encodeURIComponent(sector) +
+        "&bodega=" + encodeURIComponent(bodega)
     });
-  });
+    // FIN SECCION PARA INCLUIR LOS DATOS QUE SERÁN ENVIADOS AL SERVIDOR
+
+    html5QrCode.stop().then(() => {
+      setTimeout(() => {
+        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
+      }, 1500);
+    });
+  }
 
   document.getElementById("cambiarDatosBtn").addEventListener("click", function () {
+
+document.getElementById("btnEnviarCantidad").addEventListener("click", function () {
+  const cantidad = document.getElementById("cantidad").value;
+  const usuario = localStorage.getItem("usuario");
+  const bodega = localStorage.getItem("bodega");
+  const sector = localStorage.getItem("sector");
+
+  if (!cantidad || cantidad <= 0) {
+    alert("Por favor, ingresa una cantidad válida.");
+    return;
+  }
+
+  document.getElementById("sonidoBeep").play();
+  document.getElementById("mensaje").innerText = `${usuario} escaneó: ${codigoEscaneado}, cantidad: ${cantidad}, zona: ${sector}, bodega: ${bodega}`;
+
+  fetch("guardar_codigo.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body:
+      "codigo=" + encodeURIComponent(codigoEscaneado) +
+      "&usuario=" + encodeURIComponent(usuario) +
+      "&sector=" + encodeURIComponent(sector) +
+      "&bodega=" + encodeURIComponent(bodega) +
+      "&cantidad=" + encodeURIComponent(cantidad)
+  });
+
+  document.getElementById("formCantidad").style.display = "none";
+  setTimeout(() => {
+    html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
+  }, 1500);
+});
+
     localStorage.removeItem("usuario");
     localStorage.removeItem("sector");
 
@@ -220,11 +325,9 @@
       document.getElementById("reader").style.display = "none";
     });
 
-    document.getElementById("cantidad").style.display = "none";
-    document.getElementById("enviarBtn").style.display = "none";
     document.getElementById("cambiarDatosBtn").style.display = "none";
     document.getElementById("estadoActual").style.display = "none";
-    document.getElementById("mensaje").innerText = "Esperando selección de usuario y sector...";
+    document.getElementById("mensaje").innerText = "Esperando a que selecciones tu usuario, bodega y la zona que quieres escanear.";
     document.getElementById("seleccionDatos").style.display = "block";
   });
 </script>
