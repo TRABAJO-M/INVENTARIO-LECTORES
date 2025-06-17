@@ -72,11 +72,73 @@
       width: 250px;
       text-align: center;
     }
+     
+    /* NUEVO SWITCH */
+    .switch-container {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 3em;
+      margin-top: 20px;
+      background-color: #eee;
+      padding: 20px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .switch-label {
+      color: #333;
+      font-weight: bold;
+    }
+
+    .switch-container input {
+      display: none;
+    }
+
+    .slider {
+      position: relative;
+      width: 90px;
+      height: 46px;
+      background-color: #ccc;
+      border-radius: 34px;
+      transition: 0.4s;
+      cursor: pointer;
+    }
+
+    .slider::before {
+      content: "";
+      position: absolute;
+      height: 40px;
+      width: 40px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      border-radius: 50%;
+      transition: 0.4s;
+    }
+
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+
+    input:checked + .slider::before {
+      transform: translateX(44px);
+    }
+
+    .slider.round {
+      border-radius: 34px;
+    }
+
+/* FIN NUEVO SWITCH */
+
+
+    
   </style>
 </head>
 <body>
 
 <audio id="sonidoBeep" src="beep-472.mp3" preload="auto"></audio>
+<audio id="sonidoConfirmacion" src="plucky-564.mp3" preload="auto"></audio>
 
 <!-- SELECCIÓN INICIAL -->
 <div id="seleccionDatos">
@@ -93,8 +155,18 @@
 <!-- ESCANEO -->
 <h2>Escanear código de barras</h2>
 
+<!-- BOTÓN PARA CAMBIAR DATOS -->
 <button id="cambiarDatosBtn" style="display:none;" class="boton-confirmar mttop-botoncambio">Cambiar usuario, bodega o zona</button>
+<!-- FIN BOTÓN PARA CAMBIAR DATOS -->
 
+<!-- CAMBIO DE MODO ESCANEO -->
+<label class="switch-container" style="display:none;" id="modoSwitchContainer">
+  <span class="switch-label">Modo automático</span>
+  <input type="checkbox" id="modoSwitch">
+  <span class="slider round"></span>
+</label>
+
+<!-- FIN CAMBIO DE MODO ESCANEO -->
 <div id="reader"></div>
 
 <!-- FORMULARIO DE CANTIDAD -->
@@ -114,6 +186,7 @@
 <!-- FIN MENSAJE DE UBICACION ACTUAL -->
 
 <script>
+  let modoAutomatico = false;
   let esperandoCantidad = false;
   let codigoEscaneado = "";
 
@@ -161,27 +234,63 @@
     document.getElementById("reader").style.display = "block";
     document.getElementById("formCantidad").style.display = "flex"; // ✅ ahora se muestra justo después de confirmar
     document.getElementById("cambiarDatosBtn").style.display = "inline-block";
+    document.getElementById("modoSwitchContainer").style.display = "flex";
     document.getElementById("mensaje").innerText = "Escanea un código para continuar";
   }
 
+  // INICIO ONSCANSUCCESS
+
   function onScanSuccess(decodedText) {
     if (esperandoCantidad) return;
-    esperandoCantidad = true;
+
     codigoEscaneado = decodedText;
-
-// EMITE SONIDO INMEDIATAMENTE LUEGO DE ESCANEAR
     document.getElementById("sonidoBeep").play();
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    
-// FIN EMITE SONIDO LUEGO DE ESCANEAR
 
-    document.getElementById("formCantidad").style.display = "flex";    
-    document.getElementById("mensaje").innerText = `Código escaneado: ${decodedText}. Ingresa la cantidad.`;
-    document.getElementById("cantidad").value = "";
-    document.getElementById("cantidad").focus();
-  
+    const usuario = localStorage.getItem("usuario");
+    const bodega = localStorage.getItem("bodega");
+    const sector = localStorage.getItem("sector");
+
+    if (modoAutomatico) {
+      // Enviar sin cantidad
+      fetch("guardar_codigo.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `codigo=${encodeURIComponent(codigoEscaneado)}&usuario=${encodeURIComponent(usuario)}&bodega=${encodeURIComponent(bodega)}&sector=${encodeURIComponent(sector)}&cantidad=`
+      })
+      .then(() => {
+        document.getElementById("mensaje").innerText = `${usuario} este es el último código que escaneaste: ${codigoEscaneado}, sin cantidad, en la zona: ${sector}, de: ${bodega}.`;
+      });
+// TIEMPO DE ESPERA ESCANEO
+
+    html5QrCode.stop().then(() => {
+      setTimeout(() => {
+        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
+      }, 1500);
+    });
+    
+// FIN TIEMPO DE ESPERA ESCANEO
+
+     document.getElementById("formCantidad").style.display = "none"; // Oculta el formulario de cantidad
+      esperandoCantidad = false; // Resetea el estado de espera
+      document.getElementById("mensaje").innerText = "Escanea un nuevo código o cambia de modo si es necesario.";
+      
+      // Actualiza el estado actual
+      document.getElementById("estadoActual").innerText = `${usuario} actualmente estas escaneando la zona ${sector} en sector: ${bodega}`;
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
+    } else {
+      // Modo normal: espera cantidad
+      esperandoCantidad = true;
+      document.getElementById("formCantidad").style.display = "flex";
+      document.getElementById("mensaje").innerText = `Código escaneado: ${codigoEscaneado}. Ingresa la cantidad.`;
+      document.getElementById("cantidad").value = "";
+      document.getElementById("cantidad").focus();
+    }
+
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   }
+
+    // FIN ONSCANSUCCESS
 
   // FORMULARIO DE ENVIO DE CANTIDAD
 
@@ -196,29 +305,47 @@
       return;
     }
 
-
-
-
-
     document.getElementById("mensaje").innerText = `${usuario} este es el último codigo que escaneaste: ${codigoEscaneado}, con cantidad: ${cantidad}, en la zona: ${sector}, de: ${bodega} \n Para seguir escaneando, simplemente escanea un nuevo código`;
-
+    document.getElementById("sonidoConfirmacion").play().catch(e => console.warn("No se pudo reproducir el sonido de confirmación:", e));
+    
     fetch("guardar_codigo.php", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: `codigo=${encodeURIComponent(codigoEscaneado)}&usuario=${encodeURIComponent(usuario)}&bodega=${encodeURIComponent(bodega)}&sector=${encodeURIComponent(sector)}&cantidad=${encodeURIComponent(cantidad)}`
     });
 
-    document.getElementById("formCantidad").style.display = "none";
     esperandoCantidad = false;
+    document.getElementById("formCantidad").style.display = "flex";
+    document.getElementById("cantidad").value = "";
+    document.getElementById("cantidad").focus();
     setTimeout(() => {
       html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
-    }, 1000);
+    }, 1500);
   });
 
+  // BOTON PARA CAMBIAR DATOS
   document.getElementById("cambiarDatosBtn").addEventListener("click", function () {
     localStorage.clear();
     window.location.reload(); // ← limpia todo y vuelve a cargar el estado inicial
   });
+  // FIN BOTON PARA CAMBIAR DATOS
+
+  // SWITCH PARA CAMBIAR MODO ESCANEO
+  document.getElementById("modoSwitch").addEventListener("change", function () {
+    modoAutomatico = this.checked;
+
+    if (modoAutomatico) {
+      document.getElementById("formCantidad").style.display = "none";
+      document.getElementById("btnEnviarCantidad").style.display = "none";
+      document.getElementById("mensaje").innerText = "Modo automático activado. Escanea para guardar directamente.";
+    } else {
+      document.getElementById("formCantidad").style.display = "flex";
+      document.getElementById("btnEnviarCantidad").style.display = "inline-block";
+      document.getElementById("mensaje").innerText = "Modo con cantidad activado. Escanea e ingresa la cantidad.";
+    }
+  });
+
+// FIN SWITCH PARA CAMBIAR MODO ESCANEO
 
   document.addEventListener("DOMContentLoaded", () => {
     poblarOpciones();

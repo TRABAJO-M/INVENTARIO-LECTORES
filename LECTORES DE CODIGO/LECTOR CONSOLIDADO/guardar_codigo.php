@@ -16,11 +16,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     // Validación completa
     if (
+        $codigo === '' ||
         !in_array($usuario, $usuariosValidos) ||
         !in_array($bodega, $bodegasValidas) ||
         !in_array($sector, $sectoresValidos) ||
-        !is_numeric($cantidad) || $cantidad < 0 ||
-        $codigo === ''
+        ($cantidad !== '' && (!is_numeric($cantidad) || $cantidad < 0))
     ) {
         http_response_code(400);
         echo "Datos inválidos o incompletos.";
@@ -30,26 +30,39 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     // Preparar línea a guardar
     $fecha = date("d/m/Y");
     $hora = date("H:i:s");
+    // Asegúrate de que el orden de las columnas aquí coincida con el orden de la cabecera
     $linea = "$fecha;$hora;$codigo;$cantidad;$usuario;$bodega;$sector" . PHP_EOL;
-    //  $linea = "Código: *$codigo* | Cantidad: *$cantidad* | Fecha: *$fecha* | Usuario: *$usuario* | Bodega: *$bodega* | Zona: *$sector*" .  // LINEA ANTERIOR
+
     // Guardar en archivo
     $archivo = "registros/codigos.csv";
 
+    // Crear la carpeta 'registros' si no existe
     if (!is_dir("registros")) {
         mkdir("registros", 0777, true);
     }
-     
-    // ✅ Si el archivo no existe, escribir cabecera primero
-    if (!file_exists($archivo)) {
+      
+    // --- INICIO DE LA LÓGICA MODIFICADA PARA LA CABECERA ---
+    // Verificar si el archivo no existe O si existe pero está vacío (tamaño 0)
+    if (!file_exists($archivo) || filesize($archivo) == 0) {
         $cabecera = "Fecha;Hora;Codigo;Cantidad;Usuario;Bodega;Zona" . PHP_EOL;
-        file_put_contents($archivo, $cabecera, FILE_APPEND);
+        // Siempre usamos FILE_APPEND para evitar sobrescribir si por alguna razón el archivo ya tuviera algo
+        file_put_contents($archivo, $cabecera, FILE_APPEND | LOCK_EX); // Añadido LOCK_EX para mejor seguridad
     }
+    // --- FIN DE LA LÓGICA MODIFICADA PARA LA CABECERA ---
 
-// ESCRIBIR AL FINAL, SI EL ARCHIVO YA EXISTE AL FINAL DEL ARCHIVO
-    file_put_contents($archivo, $linea, FILE_APPEND);
-
-    // Confirmación simple
-    http_response_code(200);
-    echo "Guardado correctamente.";
+    // ESCRIBIR AL FINAL, SI EL ARCHIVO YA EXISTE AL FINAL DEL ARCHIVO
+    // Añadido LOCK_EX aquí también para consistencia
+    if (file_put_contents($archivo, $linea, FILE_APPEND | LOCK_EX) !== false) {
+        // Confirmación simple
+        http_response_code(200);
+        echo "Guardado correctamente.";
+    } else {
+        http_response_code(500); // Internal Server Error
+        error_log("Error al escribir en el archivo: " . $archivo); // Registrar el error para depuración
+        echo "Error al guardar los datos en el archivo.";
+    }
+} else {
+    http_response_code(405); // Method Not Allowed
+    echo "Método no permitido.";
 }
 ?>
