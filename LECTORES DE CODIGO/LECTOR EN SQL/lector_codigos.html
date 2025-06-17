@@ -265,7 +265,7 @@
     html5QrCode.stop().then(() => {
       setTimeout(() => {
         html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
-      }, 1000);
+      }, 1500);
     });
     
 // FIN TIEMPO DE ESPERA ESCANEO
@@ -315,7 +315,7 @@
     });
 
     esperandoCantidad = false;
-    document.getElementById("formCantidad").style.display = "none"; // EN FLEX SE MANTIENEN VISIBLES, EN NONE SE OCULTAN
+    document.getElementById("formCantidad").style.display = "flex";
     document.getElementById("cantidad").value = "";
     document.getElementById("cantidad").focus();
     setTimeout(() => {
